@@ -116,7 +116,7 @@ class ReminderListFragment : BaseFragment() {
                 .createSignInIntentBuilder()
                 .setAvailableProviders(providers)
                 .setTheme(R.style.AppTheme)
-                .setLogo(R.drawable.ic_launcher_foreground)
+                .setLogo(R.drawable.map)
                 .build(),
             SIGN_IN_REQUEST_CODE
         )
