@@ -16,6 +16,8 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -30,13 +32,13 @@ android {
         includeAndroidResources = true
         returnDefaultValues = true
     }
-
-    //dataBinding {
-    //    enabled = true
-    //    enabledForTests = true
-    //}
+    
     buildFeatures {
         dataBinding true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -55,7 +57,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.5'
 
     // Architecture Components
-    //Navigation dependencies
+    // Navigation dependencies
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-rc1'
     kapt "androidx.lifecycle:lifecycle-compiler:$archLifecycleVersion"
@@ -67,18 +69,17 @@ dependencies {
     implementation "androidx.navigation:navigation-ui-ktx:$navigationVersion"
     implementation "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
 
-    //Room dependencies
+    // Room dependencies
     implementation "androidx.room:room-ktx:$roomVersion"
     implementation "androidx.room:room-runtime:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"
 
-    //Coroutines Dependencies
+    // Coroutines Dependencies
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
 
-    //Koin
+    // Koin
     implementation "org.koin:koin-android:$koinVersion"
     implementation "org.koin:koin-androidx-viewmodel:$koinVersion"
-
 
     // Dependencies for local unit tests
     testImplementation "junit:junit:$junitVersion"
@@ -118,9 +119,12 @@ dependencies {
 
 
 
-    //Maps & Geofencing
+    // Maps & Geofencing
     implementation "com.google.android.gms:play-services-location:$playServicesVersion"
     implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
 
+    // Firebase UI Auth
+    implementation 'com.firebaseui:firebase-ui-auth:8.0.2'
 
+    implementation 'com.android.support:multidex:1.0.3'
 }
