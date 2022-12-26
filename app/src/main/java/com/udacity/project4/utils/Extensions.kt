@@ -19,7 +19,6 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
-
 /**
  * Extension function to setup the RecyclerView
  */
@@ -46,7 +45,7 @@ fun Fragment.setDisplayHomeAsUpEnabled(bool: Boolean) {
     }
 }
 
-//animate changing the view visibility
+// Animate changing the view visibility
 fun View.fadeIn() {
     this.visibility = View.VISIBLE
     this.alpha = 0f
@@ -57,7 +56,7 @@ fun View.fadeIn() {
     })
 }
 
-//animate changing the view visibility
+// Animate changing the view visibility
 fun View.fadeOut() {
     this.animate().alpha(0f).setListener(object : AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator) {
