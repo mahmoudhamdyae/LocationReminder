@@ -2,18 +2,15 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.InputType
 import android.view.*
 import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
-import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -23,9 +20,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
-import com.udacity.project4.databinding.DialogLocationNameBinding
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
-import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
@@ -34,7 +29,7 @@ import java.util.*
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     // Use Koin to get the view model of the SaveReminder
-    override val _viewModel: SaveReminderViewModel by inject()
+    override val baseViewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
 
     private lateinit var map: GoogleMap
@@ -52,7 +47,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         binding =
             DataBindingUtil.inflate(inflater, R.layout.fragment_select_location, container, false)
 
-        binding.viewModel = _viewModel
+        binding.viewModel = baseViewModel
         binding.lifecycleOwner = this
 
         setHasOptionsMenu(true)
@@ -63,7 +58,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         binding.saveButton.setOnClickListener {
             onLocationSelected()
-            _viewModel.navigateBack()
+            baseViewModel.navigateBack()
         }
 
         return binding.root
@@ -84,9 +79,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
     private fun onLocationSelected() {
-        _viewModel.latitude.value = latitude
-        _viewModel.longitude.value = longitude
-        _viewModel.reminderSelectedLocationStr.value = location2
+        baseViewModel.latitude.value = latitude
+        baseViewModel.longitude.value = longitude
+        baseViewModel.reminderSelectedLocationStr.value = location2
     }
 
 

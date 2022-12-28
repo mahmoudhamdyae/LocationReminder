@@ -28,7 +28,7 @@ class ReminderListFragment : BaseFragment() {
     }
 
     // Use Koin to retrieve the ViewModel instance
-    override val _viewModel: RemindersListViewModel by viewModel()
+    override val baseViewModel: RemindersListViewModel by viewModel()
     private lateinit var binding: FragmentRemindersBinding
     private val viewModel: LoginViewModel by viewModels()
 
@@ -44,13 +44,13 @@ class ReminderListFragment : BaseFragment() {
                 container,
                 false
             )
-        binding.viewModel = _viewModel
+        binding.viewModel = baseViewModel
 
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(false)
         setTitle(getString(R.string.app_name))
 
-        binding.refreshLayout.setOnRefreshListener { _viewModel.loadReminders() }
+        binding.refreshLayout.setOnRefreshListener { baseViewModel.loadReminders() }
 
         return binding.root
     }
@@ -84,6 +84,7 @@ class ReminderListFragment : BaseFragment() {
     /**
      * Observes the authentication state and changes the UI accordingly.
      */
+    @Suppress("COMPATIBILITY_WARNING")
     private fun observeAuthenticationState() {
         viewModel.authenticationState.observe(viewLifecycleOwner) { authenticationState ->
             when (authenticationState) {
@@ -125,12 +126,12 @@ class ReminderListFragment : BaseFragment() {
     override fun onResume() {
         super.onResume()
         // Load the reminders list on the ui
-        _viewModel.loadReminders()
+        baseViewModel.loadReminders()
     }
 
     private fun navigateToAddReminder() {
-        //use the navigationCommand live data to navigate between the fragments
-        _viewModel.navigationCommand.postValue(
+        // Use the navigationCommand live data to navigate between the fragments
+        baseViewModel.navigationCommand.postValue(
             NavigationCommand.To(
                 ReminderListFragmentDirections.toSaveReminder()
             )
