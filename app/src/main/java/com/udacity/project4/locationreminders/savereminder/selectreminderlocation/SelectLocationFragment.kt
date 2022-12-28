@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.os.Bundle
 import android.text.InputType
 import android.view.*
@@ -17,6 +18,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
@@ -130,6 +132,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
         setMapLongClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
+        setMapStyle(map) // Set the custom map style.
 
         enableMyLocation() // Enable location tracking.
     }
@@ -177,6 +180,26 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             poiMarker?.showInfoWindow()
 
             setLocation(poi.latLng , poi.name)
+        }
+    }
+
+    /**
+     * Loads a style from the map_style.json file to style the Google Map. Log
+     * the errors if the loading fails.
+     *
+     * @param map The GoogleMap object to style.
+     */
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            // Customize the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    context,
+                    R.raw.map_style
+                )
+            )
+        } catch (_: Resources.NotFoundException) {
         }
     }
 
