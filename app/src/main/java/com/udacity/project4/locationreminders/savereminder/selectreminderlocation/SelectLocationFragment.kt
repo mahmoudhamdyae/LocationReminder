@@ -3,6 +3,12 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 import android.os.Bundle
 import android.view.*
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
@@ -10,11 +16,13 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 
-class SelectLocationFragment : BaseFragment() {
+class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
-    //Use Koin to get the view model of the SaveReminder
+    // Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
+
+    private lateinit var map: GoogleMap
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -30,6 +38,9 @@ class SelectLocationFragment : BaseFragment() {
 
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
+
+        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
         // TODO: Add the map setup implementation
         // TODO: Zoom to the user location after taking his permission
@@ -69,5 +80,24 @@ class SelectLocationFragment : BaseFragment() {
             true
         }
         else -> super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * Triggered when the map is ready to be used.
+     *
+     * @param googleMap The GoogleMap object representing the Google Map.
+     */
+    override fun onMapReady(googleMap: GoogleMap) {
+        map = googleMap
+
+        val latitude = 31.045162
+        val longitude = 31.399642
+
+        // Pan the camera to your home address (in this case, Google HQ).
+        val homeLatLng = LatLng(latitude, longitude)
+
+        val zoomLevel = 18f
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
+        map.addMarker(MarkerOptions().position(homeLatLng))
     }
 }
