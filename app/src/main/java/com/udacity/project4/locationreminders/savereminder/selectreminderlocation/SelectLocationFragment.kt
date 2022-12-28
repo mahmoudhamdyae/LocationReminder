@@ -2,13 +2,18 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.text.InputType
 import android.view.*
+import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -18,6 +23,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
+import com.udacity.project4.databinding.DialogLocationNameBinding
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
@@ -32,10 +38,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     private lateinit var binding: FragmentSelectLocationBinding
 
     private lateinit var map: GoogleMap
-    private val REQUEST_LOCATION_PERMISSION = 1
 
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
+    private var location2: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,22 +61,32 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
+        binding.saveButton.setOnClickListener {
+            onLocationSelected()
+            _viewModel.navigateBack()
+        }
+
         return binding.root
     }
 
-    private fun setLocation(latLng: LatLng) {
+    private fun setLocation(latLng: LatLng, location: String = "") {
         latitude = latLng.latitude
         longitude = latLng.longitude
-        onLocationSelected()
+        location2 = getLocation(location)
+    }
+
+    private fun getLocation(location: String): String {
+        if (location.isEmpty()) {
+            location2 = getString(R.string.dropped_pin)
+            createDialog()
+        }
+        return location
     }
 
     private fun onLocationSelected() {
-        //TODO: When the user confirms on the selected location,
-        // send back the selected location details to the view model
-        // and navigate back to the previous fragment to save the reminder and add the geofence
-        Toast.makeText(context, latitude.toString() + longitude.toString(), Toast.LENGTH_SHORT).show()
-//        val reminderData = ReminderDataItem()
-//        _viewModel.validateAndSaveReminder()
+        _viewModel.latitude.value = latitude
+        _viewModel.longitude.value = longitude
+        _viewModel.reminderSelectedLocationStr.value = location2
     }
 
 
@@ -165,8 +181,32 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             )
             poiMarker?.showInfoWindow()
 
-            setLocation(poi.latLng)
+            setLocation(poi.latLng , poi.name)
         }
+    }
+
+    private fun createDialog() {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Title")
+
+        // Set up the input
+        val input = EditText(requireContext())
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.hint = getString(R.string.dialog_text)
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        builder.setView(input)
+
+        // Set up the buttons
+        builder.setPositiveButton(getString(R.string.ok_button)) { _, _ ->
+            // Here you get get input text from the Edit Text
+            location2 = input.text.toString()
+        }
+        builder.setNegativeButton(getString(R.string.cancel_button)) { dialog, _ ->
+            location2 = getString(R.string.dropped_pin)
+            dialog.cancel()
+        }
+
+        builder.show()
     }
 
     // Checks that users have given permission
@@ -211,5 +251,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 enableMyLocation()
             }
         }
+    }
+
+    companion object {
+        private const val REQUEST_LOCATION_PERMISSION = 1
     }
 }
