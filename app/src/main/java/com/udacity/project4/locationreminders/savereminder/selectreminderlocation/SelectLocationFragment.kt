@@ -120,16 +120,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
 
-        val latitude = 31.045162
-        val longitude = 31.399642
-
-        // Pan the camera to your home address (in this case, Google HQ).
-        val homeLatLng = LatLng(latitude, longitude)
-
-        val zoomLevel = 18f
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
-        map.addMarker(MarkerOptions().position(homeLatLng))
-
         setMapLongClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
         setMapStyle(map) // Set the custom map style.
