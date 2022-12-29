@@ -1,12 +1,12 @@
 package com.udacity.project4.locationreminders
 
-import android.app.PendingIntent
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.IntentSender
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -15,24 +15,18 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Observer
 import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.Geofence
-import com.google.android.gms.location.GeofencingClient
-import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
 import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.geofence.GeofenceViewModel
 import com.udacity.project4.locationreminders.geofence.GeofencingConstants
-import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
-import com.udacity.project4.utils.sendNotification
 import kotlinx.android.synthetic.main.activity_reminders.*
 
 /**
@@ -62,6 +56,10 @@ class RemindersActivity : AppCompatActivity() {
             this)
         ).get(GeofenceViewModel::class.java)
         geofencingClient = LocationServices.getGeofencingClient(this)
+
+//        viewModel.geofenceHintResourceId.observe(this, Observer {
+//            Toast.makeText(this, getString(it!!), Toast.LENGTH_SHORT).show()
+//        })
     }
 
     @Suppress("CAST_NEVER_SUCCEEDS")
@@ -101,7 +99,7 @@ class RemindersActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         val extras = intent?.extras
-        if(extras != null){
+        if (extras != null) {
             if(extras.containsKey(GeofencingConstants.EXTRA_GEOFENCE_INDEX)){
                 viewModel.updateHint(extras.getInt(GeofencingConstants.EXTRA_GEOFENCE_INDEX))
                 checkPermissionsAndStartGeofencing()
@@ -259,7 +257,7 @@ class RemindersActivity : AppCompatActivity() {
     private fun addGeofenceForClue() {
         if (viewModel.geofenceIsActive()) return
         val currentGeofenceIndex = viewModel.nextGeofenceIndex()
-        if(currentGeofenceIndex >= GeofencingConstants.NUM_LANDMARKS) {
+        if (currentGeofenceIndex >= GeofencingConstants.NUM_LANDMARKS) {
             removeGeofences()
             viewModel.geofenceActivated()
             return
@@ -268,7 +266,8 @@ class RemindersActivity : AppCompatActivity() {
 
         val geofence = Geofence.Builder()
             .setRequestId(currentGeofenceData.id)
-            .setCircularRegion(currentGeofenceData.latLong.latitude,
+            .setCircularRegion(
+                currentGeofenceData.latLong.latitude,
                 currentGeofenceData.latLong.longitude,
                 GeofencingConstants.GEOFENCE_RADIUS_IN_METERS
             )

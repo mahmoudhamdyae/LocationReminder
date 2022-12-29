@@ -33,7 +33,7 @@ class GeofenceViewModel(state: SavedStateHandle) : ViewModel() {
     }
 
     fun updateHint(currentIndex: Int) {
-        _hintIndex.value = currentIndex+1
+        _hintIndex.value = currentIndex + 1
     }
 
     fun geofenceActivated() {
