@@ -9,9 +9,10 @@ import android.text.InputType
 import android.view.*
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -27,6 +28,7 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import java.util.*
+
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
@@ -112,19 +114,33 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         else -> super.onOptionsItemSelected(item)
     }
 
+    private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     /**
      * Triggered when the map is ready to be used.
      *
      * @param googleMap The GoogleMap object representing the Google Map.
      */
+    @SuppressLint("MissingPermission")
     override fun onMapReady(googleMap: GoogleMap) {
         map = googleMap
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        if (isPermissionGranted()) {
+            fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location->
+                    if (location != null) {
+                        val homeLatLng = LatLng(location.latitude, location.longitude)
+                        val zoomLevel = 18f
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
+                        map.addMarker(MarkerOptions().position(homeLatLng))
+                    }
+
+                }
+        }
 
         setMapLongClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
         setMapStyle(map) // Set the custom map style.
-
-        enableMyLocation() // Enable location tracking.
     }
 
     /**
@@ -224,45 +240,5 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         return ContextCompat.checkSelfPermission(
             requireContext(),
             Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED
-    }
-
-    /**
-     * Checks for location permissions, and requests them if they are missing.
-     * Otherwise, enables the location layer.
-     */
-    // Checks if users have given their location and sets location enabled if so.
-    @SuppressLint("MissingPermission")
-    private fun enableMyLocation() {
-        if (isPermissionGranted()) {
-            map.isMyLocationEnabled = true
-        }
-        else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUEST_LOCATION_PERMISSION
-            )
-        }
-    }
-
-    // Callback for the result from requesting permissions.
-    // This method is invoked for every call on requestPermissions(android.app.Activity, String[],
-    // int).
-    @Deprecated("Deprecated in Java")
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray) {
-        // Check if location permissions are granted and if so enable the
-        // location data layer.
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                enableMyLocation()
-            }
-        }
-    }
-
-    companion object {
-        private const val REQUEST_LOCATION_PERMISSION = 1
     }
 }
