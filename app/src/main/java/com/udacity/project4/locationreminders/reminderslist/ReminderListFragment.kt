@@ -15,6 +15,7 @@ import com.udacity.project4.authentication.LoginViewModel
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentRemindersBinding
+import com.udacity.project4.utils.sendNotification
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.setTitle
 import com.udacity.project4.utils.setup
@@ -62,6 +63,16 @@ class ReminderListFragment : BaseFragment() {
         setupRecyclerView()
         binding.addReminderFAB.setOnClickListener {
             navigateToAddReminder()
+        }
+
+        binding.testaa.setOnClickListener {
+            sendNotification(requireContext(), ReminderDataItem(
+                title = "title",
+                description = "description",
+                location = "location",
+                latitude = 0.0,
+                longitude = 0.0
+            ))
         }
 
         observeAuthenticationState()

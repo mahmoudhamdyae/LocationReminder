@@ -31,11 +31,14 @@ import com.udacity.project4.R
 import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
 import com.udacity.project4.locationreminders.geofence.GeofenceViewModel
 import com.udacity.project4.locationreminders.geofence.GeofencingConstants
+import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
+import com.udacity.project4.utils.sendNotification
 import kotlinx.android.synthetic.main.activity_reminders.*
 
 /**
  * The RemindersActivity that holds the reminders fragments
  */
+@SuppressLint("UnspecifiedImmutableFlag")
 @Suppress("DEPRECATION")
 class RemindersActivity : AppCompatActivity() {
 
@@ -61,6 +64,7 @@ class RemindersActivity : AppCompatActivity() {
         geofencingClient = LocationServices.getGeofencingClient(this)
     }
 
+    @Suppress("CAST_NEVER_SUCCEEDS")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
