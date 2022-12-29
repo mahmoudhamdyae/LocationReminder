@@ -71,32 +71,16 @@ internal object GeofencingConstants {
             37.788151,
             -122.407570)
 
-        val retArr = arrayOf(
-            LandmarkDataObject(
-                r1.id,
-                r1.description!!.toInt(),
-                r1.location!!.toInt(),
-                LatLng(r1.latitude!!, r1.longitude!!)),
+        val retArr = mutableListOf<LandmarkDataObject>()
+        val remindersArray = arrayOf(r1, r2, r3, r4)
+        remindersArray.forEach {
+            retArr += LandmarkDataObject(
+                it.id,
+                it.description!!.toInt(),
+                it.location!!.toInt(),
+                LatLng(it.latitude!!, it.longitude!!))
+        }
 
-            LandmarkDataObject(
-                r2.id,
-                r2.description!!.toInt(),
-                r2.location!!.toInt(),
-                LatLng(r2.latitude!!, r2.longitude!!)),
-
-            LandmarkDataObject(
-                r3.id,
-                r3.description!!.toInt(),
-                r3.location!!.toInt(),
-                LatLng(r3.latitude!!, r3.longitude!!)),
-
-            LandmarkDataObject(
-                r4.id,
-                r4.description!!.toInt(),
-                r4.location!!.toInt(),
-                LatLng(r4.latitude!!, r4.longitude!!))
-        )
-
-        return retArr
+        return retArr.toTypedArray()
     }
 }
