@@ -8,10 +8,6 @@
         <variable
             name="viewModel"
             type="com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel" />
-
-        <variable
-            name="vm"
-            type="com.udacity.project4.locationreminders.geofence.GeofenceViewModel" />
     </data>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

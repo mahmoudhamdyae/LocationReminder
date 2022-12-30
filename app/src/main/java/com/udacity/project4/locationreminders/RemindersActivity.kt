@@ -3,7 +3,6 @@ package com.udacity.project4.locationreminders
 import android.Manifest
 import android.annotation.SuppressLint
 import android.annotation.TargetApi
-import android.app.PendingIntent
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -12,21 +11,15 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.Observer
-import androidx.lifecycle.SavedStateViewModelFactory
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
 import com.udacity.project4.BuildConfig
 import com.udacity.project4.R
-import com.udacity.project4.locationreminders.geofence.GeofenceBroadcastReceiver
-import com.udacity.project4.locationreminders.geofence.GeofenceViewModel
-import com.udacity.project4.locationreminders.geofence.GeofencingConstants
+import com.udacity.project4.locationreminders.geofence.*
 import kotlinx.android.synthetic.main.activity_reminders.*
 
 /**
@@ -36,30 +29,12 @@ import kotlinx.android.synthetic.main.activity_reminders.*
 @Suppress("DEPRECATION")
 class RemindersActivity : AppCompatActivity() {
 
-    private lateinit var geofencingClient: GeofencingClient
-    private lateinit var viewModel: GeofenceViewModel
-
     private val runningQOrLater = android.os.Build.VERSION.SDK_INT >=
             android.os.Build.VERSION_CODES.Q
-
-    private val geofencePendingIntent: PendingIntent by lazy {
-        val intent = Intent(this, GeofenceBroadcastReceiver::class.java)
-        intent.action = ACTION_GEOFENCE_EVENT
-        PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_reminders)
-
-        viewModel = ViewModelProvider(this, SavedStateViewModelFactory(this.application,
-            this)
-        ).get(GeofenceViewModel::class.java)
-        geofencingClient = LocationServices.getGeofencingClient(this)
-
-//        viewModel.geofenceHintResourceId.observe(this, Observer {
-//            Toast.makeText(this, getString(it!!), Toast.LENGTH_SHORT).show()
-//        })
     }
 
     @Suppress("CAST_NEVER_SUCCEEDS")
@@ -88,22 +63,6 @@ class RemindersActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
             checkDeviceLocationSettingsAndStartGeofence(false)
-        }
-    }
-
-    /**
-     *  When the user clicks on the notification, this method will be called, letting us know that
-     *  the geofence has been triggered, and it's time to move to the next one in the treasure
-     *  hunt.
-     */
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        val extras = intent?.extras
-        if (extras != null) {
-            if(extras.containsKey(GeofencingConstants.EXTRA_GEOFENCE_INDEX)){
-                viewModel.updateHint(extras.getInt(GeofencingConstants.EXTRA_GEOFENCE_INDEX))
-                checkPermissionsAndStartGeofencing()
-            }
         }
     }
 
@@ -144,20 +103,10 @@ class RemindersActivity : AppCompatActivity() {
     }
 
     /**
-     * This will also destroy any saved state in the associated ViewModel, so we remove the
-     * geofences here.
-     */
-    override fun onDestroy() {
-        super.onDestroy()
-        removeGeofences()
-    }
-
-    /**
      * Starts the permission check and Geofence process only if the Geofence associated with the
      * current hint isn't yet active.
      */
     private fun checkPermissionsAndStartGeofencing() {
-        if (viewModel.geofenceIsActive()) return
         if (foregroundAndBackgroundLocationPermissionApproved()) {
             checkDeviceLocationSettingsAndStartGeofence()
         } else {
@@ -195,8 +144,8 @@ class RemindersActivity : AppCompatActivity() {
             }
         }
         locationSettingsResponseTask.addOnCompleteListener {
-            if ( it.isSuccessful ) {
-                addGeofenceForClue()
+            if (it.isSuccessful) {
+//                addGeofenceForClue()
             }
         }
     }
@@ -245,82 +194,6 @@ class RemindersActivity : AppCompatActivity() {
             permissionsArray,
             resultCode
         )
-    }
-
-    /**
-     * Adds a Geofence for the current clue if needed, and removes any existing Geofence. This
-     * method should be called after the user has granted the location permission.  If there are
-     * no more geofences, we remove the geofence and let the viewmodel know that the ending hint
-     * is now "active."
-     */
-    @SuppressLint("MissingPermission")
-    private fun addGeofenceForClue() {
-        if (viewModel.geofenceIsActive()) return
-        val currentGeofenceIndex = viewModel.nextGeofenceIndex()
-        if (currentGeofenceIndex >= GeofencingConstants.NUM_LANDMARKS) {
-            removeGeofences()
-            viewModel.geofenceActivated()
-            return
-        }
-        val currentGeofenceData = GeofencingConstants.LANDMARK_DATA[currentGeofenceIndex]
-
-        val geofence = Geofence.Builder()
-            .setRequestId(currentGeofenceData.id)
-            .setCircularRegion(
-                currentGeofenceData.latLong.latitude,
-                currentGeofenceData.latLong.longitude,
-                GeofencingConstants.GEOFENCE_RADIUS_IN_METERS
-            )
-            .setExpirationDuration(GeofencingConstants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
-            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            .build()
-
-        val geofencingRequest = GeofencingRequest.Builder()
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            .addGeofence(geofence)
-            .build()
-
-        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-            addOnCompleteListener {
-                geofencingClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-                    addOnSuccessListener {
-                        Toast.makeText(application, R.string.geofences_added,
-                            Toast.LENGTH_SHORT)
-                            .show()
-                        Log.e("Add Geofence", geofence.requestId)
-                        viewModel.geofenceActivated()
-                    }
-                    addOnFailureListener {
-                        Toast.makeText(application, R.string.geofences_not_added,
-                            Toast.LENGTH_SHORT).show()
-                        if ((it.message != null)) {
-                            Log.w(TAG, it.message!!)
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-    /**
-     * Removes geofences. This method should be called after the user has granted the location
-     * permission.
-     */
-    private fun removeGeofences() {
-        if (!foregroundAndBackgroundLocationPermissionApproved()) {
-            return
-        }
-        geofencingClient.removeGeofences(geofencePendingIntent)?.run {
-            addOnSuccessListener {
-                Log.d(TAG, getString(R.string.geofences_removed))
-                Toast.makeText(applicationContext, R.string.geofences_removed, Toast.LENGTH_SHORT)
-                    .show()
-            }
-            addOnFailureListener {
-                Log.d(TAG, getString(R.string.geofences_not_removed))
-            }
-        }
     }
 
     companion object {
