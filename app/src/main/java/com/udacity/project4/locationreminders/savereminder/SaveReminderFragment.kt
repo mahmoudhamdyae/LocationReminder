@@ -12,6 +12,7 @@ import androidx.databinding.DataBindingUtil
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
@@ -28,7 +29,6 @@ class SaveReminderFragment : BaseFragment() {
     override val baseViewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSaveReminderBinding
 
-    private val GEOFENCE_RADIUS = 500f
     private lateinit var geofencingClient: GeofencingClient
     private lateinit var geofenceHelper: GeofenceHelper
 
@@ -49,6 +49,10 @@ class SaveReminderFragment : BaseFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.lifecycleOwner = this
+
+        geofencingClient = LocationServices.getGeofencingClient(requireContext())
+        geofenceHelper = GeofenceHelper(context)
+
         binding.selectLocation.setOnClickListener {
             // Navigate to another fragment to get the user location
             baseViewModel.navigationCommand.value =
@@ -63,12 +67,12 @@ class SaveReminderFragment : BaseFragment() {
             val longitude = baseViewModel.longitude.value
             val id = UUID.randomUUID().toString()
 
+            val reminderData = ReminderDataItem(title, description, location, latitude, longitude)
+            baseViewModel.validateAndSaveReminder(reminderData)
+
             if (latitude != null && longitude != null && !TextUtils.isEmpty(title)) {
                 addGeofence(LatLng(latitude, longitude), id)
             }
-
-            val reminderData = ReminderDataItem(title, description, location, latitude, longitude)
-            baseViewModel.validateAndSaveReminder(reminderData)
         }
     }
 
@@ -76,7 +80,6 @@ class SaveReminderFragment : BaseFragment() {
         super.onDestroy()
         // Make sure to clear the view model after destroy, as it's a single view model.
         baseViewModel.onClear()
-        removeGeofences()
     }
 
     @SuppressLint("MissingPermission")
@@ -85,23 +88,15 @@ class SaveReminderFragment : BaseFragment() {
         val geofence: Geofence = geofenceHelper.getGeofence(
             geofenceId,
             latLng,
-            GEOFENCE_RADIUS,
+            500f,
             Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
         )
         val geofencingRequest: GeofencingRequest = geofenceHelper.getGeofencingRequest(geofence)
         val pendingIntent: PendingIntent? = geofenceHelper.getGeofencePendingIntent()
 
         geofencingClient.addGeofences(geofencingRequest, pendingIntent)
-            .addOnSuccessListener {
-                Toast.makeText(context, "geofence ok", Toast.LENGTH_LONG).show()
-            }
             .addOnFailureListener {
                 Toast.makeText(context, "Please give background location permission", Toast.LENGTH_LONG).show()
             }
-    }
-
-    private fun removeGeofences() {
-        val pendingIntent: PendingIntent? = geofenceHelper.getGeofencePendingIntent()
-        geofencingClient.removeGeofences(pendingIntent)
     }
 }
