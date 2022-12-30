@@ -13,7 +13,7 @@ import android.util.Log
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.findNavController
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
@@ -37,11 +37,10 @@ class RemindersActivity : AppCompatActivity() {
         setContentView(R.layout.activity_reminders)
     }
 
-    @Suppress("CAST_NEVER_SUCCEEDS")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
-                (nav_host_fragment as NavHostFragment).navController.popBackStack()
+                nav_host_fragment.findNavController().navigateUp()
                 return true
             }
         }
@@ -141,11 +140,6 @@ class RemindersActivity : AppCompatActivity() {
                 ).setAction(android.R.string.ok) {
                     checkDeviceLocationSettingsAndStartGeofence()
                 }.show()
-            }
-        }
-        locationSettingsResponseTask.addOnCompleteListener {
-            if (it.isSuccessful) {
-//                addGeofenceForClue()
             }
         }
     }
