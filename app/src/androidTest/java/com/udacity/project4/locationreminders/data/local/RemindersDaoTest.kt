@@ -6,7 +6,7 @@ import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
-import junit.framework.Assert.assertNull
+import org.junit.Assert.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.`is`
@@ -46,7 +46,7 @@ class RemindersDaoTest {
     fun insertTaskAndGetById() = runBlockingTest {
         // GIVEN - Insert a reminder.
         val reminderDateItem = ReminderDTO(
-            "",
+            "title",
             "description",
             "location",
             0.0,
