@@ -30,20 +30,26 @@ class RemindersListViewModelTest {
     private lateinit var reminderListViewModel: RemindersListViewModel
 
     // Use a fake repository to be injected into the view model.
-    private lateinit var tasksRepository: FakeDataSource
+    private lateinit var remindersRepository: FakeDataSource
 
     @Before
     fun setupRemindersListViewModel() {
         // Initialise the repository with no reminders.
-        tasksRepository = FakeDataSource()
+        remindersRepository = FakeDataSource()
 
         reminderListViewModel = RemindersListViewModel(
-            ApplicationProvider.getApplicationContext(), tasksRepository)
+            ApplicationProvider.getApplicationContext(), remindersRepository)
     }
 
     @Test
     fun shouldReturnError() {
+        // Make the repository return errors.
+        remindersRepository.setReturnError(true)
+
         reminderListViewModel.loadReminders()
+
+        assertThat(reminderListViewModel.showNoData.getOrAwaitValue(), `is`(true))
+        assertThat(reminderListViewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
     }
 
     @Test
