@@ -10,11 +10,13 @@ import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.stopKoin
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
@@ -45,6 +47,11 @@ class SaveReminderViewModelTest {
             ApplicationProvider.getApplicationContext(), remindersRepository)
     }
 
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
+
     @Test
     fun shouldReturnError() = runBlockingTest {
         val reminderDateItem = ReminderDataItem(
@@ -56,7 +63,7 @@ class SaveReminderViewModelTest {
             "id")
         saveReminderViewModel.validateEnteredData(reminderDateItem)
 
-        MatcherAssert.assertThat(saveReminderViewModel.validateEnteredData(reminderDateItem), `is`(false))
+        assertThat(saveReminderViewModel.validateEnteredData(reminderDateItem), `is`(false))
     }
 
     @Test
@@ -75,12 +82,12 @@ class SaveReminderViewModelTest {
         saveReminderViewModel.validateAndSaveReminder(reminderDateItem)
 
         // Then progress indicator is shown.
-        MatcherAssert.assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(true))
+        assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(true))
 
         // Execute pending coroutines actions.
         mainCoroutineRule.resumeDispatcher()
 
         // Then progress indicator is hidden.
-        MatcherAssert.assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(false))
+        assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
 }
