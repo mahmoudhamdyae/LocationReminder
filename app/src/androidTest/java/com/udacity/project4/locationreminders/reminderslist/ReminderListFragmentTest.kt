@@ -1,16 +1,13 @@
 package com.udacity.project4.locationreminders.reminderslist
 
 import android.os.Bundle
-import android.view.View
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -20,8 +17,6 @@ import com.udacity.project4.locationreminders.data.local.FakeDataSource
 import com.udacity.project4.util.atPosition
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
-import org.hamcrest.Description
-import org.hamcrest.Matcher
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -31,7 +26,6 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-
 
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
@@ -103,6 +97,4 @@ class ReminderListFragmentTest {
         onView(withId(R.id.remindersRecyclerView))
             .check(matches(atPosition(0, hasDescendant(withText("title")))))
     }
-
-    // TODO: add testing for the error messages.
 }
