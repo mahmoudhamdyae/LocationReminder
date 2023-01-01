@@ -59,13 +59,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
-
         binding.saveButton.setOnClickListener {
             onLocationSelected()
             baseViewModel.navigateBack()
         }
+
+        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
         return binding.root
     }
@@ -139,11 +139,11 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 }
         }
 
-        enableMyLocation() // Enable location tracking.
-
         setMapLongClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
         setMapStyle(map) // Set the custom map style.
+
+        enableMyLocation() // Enable location tracking.
     }
 
     /**
@@ -296,6 +296,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         val settingsClient = LocationServices.getSettingsClient(requireContext())
         val locationSettingsResponseTask =
             settingsClient.checkLocationSettings(builder.build())
+
+        // Location Enabled
+        locationSettingsResponseTask.addOnSuccessListener {
+            getMyCurrentLocation()
+        }
+
+        // Location not Enabled
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
                 try {
