@@ -2,6 +2,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -330,6 +331,20 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             } else {
                 map.isMyLocationEnabled = false
             }
+        }
+    }
+
+    /**
+     *  When we get the result from asking the user to turn on device location, we call
+     *  checkDeviceLocationSettingsAndStartGeofence again to make sure it's actually on, but
+     *  we don't resolve the check to keep the user from seeing an endless loop.
+     */
+    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
+            enableDeviceLocation(false)
         }
     }
 }
