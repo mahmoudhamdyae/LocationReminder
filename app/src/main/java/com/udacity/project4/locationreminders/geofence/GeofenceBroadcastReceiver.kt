@@ -21,20 +21,18 @@ private const val TAG = "GeofenceReceiver"
  */
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-//        if (intent.action == ACTION_GEOFENCE_EVENT) {
-//            val geofencingEvent = GeofencingEvent.fromIntent(intent)
-//
-//            if (geofencingEvent.hasError()) {
-//                val errorMessage = GeofenceHelper(context).errorMessage(context, geofencingEvent.errorCode)
-//                Log.e(TAG, errorMessage)
-//                return
-//            }
-//
-//            when (geofencingEvent.geofenceTransition) {
-//                Geofence.GEOFENCE_TRANSITION_ENTER -> {
-//                    enqueueWork(context, intent)
-//                }
-//            }
-//        }
+        val geofencingEvent = GeofencingEvent.fromIntent(intent)
+
+        if (geofencingEvent.hasError()) {
+            val errorMessage = GeofenceHelper(context).errorMessage(context, geofencingEvent.errorCode)
+            Log.e(TAG, errorMessage)
+            return
+        }
+
+        when (geofencingEvent.geofenceTransition) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                enqueueWork(context, intent)
+            }
+        }
     }
 }
