@@ -6,7 +6,6 @@ import android.content.Intent
 import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
-import com.udacity.project4.locationreminders.RemindersActivity.Companion.ACTION_GEOFENCE_EVENT
 import com.udacity.project4.locationreminders.geofence.GeofenceTransitionsJobIntentService.Companion.enqueueWork
 
 private const val TAG = "GeofenceReceiver"
@@ -22,20 +21,20 @@ private const val TAG = "GeofenceReceiver"
  */
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == ACTION_GEOFENCE_EVENT) {
-            val geofencingEvent = GeofencingEvent.fromIntent(intent)
-
-            if (geofencingEvent.hasError()) {
-                val errorMessage = GeofenceHelper(context).errorMessage(context, geofencingEvent.errorCode)
-                Log.e(TAG, errorMessage)
-                return
-            }
-
-            when (geofencingEvent.geofenceTransition) {
-                Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                    enqueueWork(context, intent)
-                }
-            }
-        }
+//        if (intent.action == ACTION_GEOFENCE_EVENT) {
+//            val geofencingEvent = GeofencingEvent.fromIntent(intent)
+//
+//            if (geofencingEvent.hasError()) {
+//                val errorMessage = GeofenceHelper(context).errorMessage(context, geofencingEvent.errorCode)
+//                Log.e(TAG, errorMessage)
+//                return
+//            }
+//
+//            when (geofencingEvent.geofenceTransition) {
+//                Geofence.GEOFENCE_TRANSITION_ENTER -> {
+//                    enqueueWork(context, intent)
+//                }
+//            }
+//        }
     }
 }

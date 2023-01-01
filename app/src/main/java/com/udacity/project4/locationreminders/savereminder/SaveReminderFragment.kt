@@ -71,7 +71,7 @@ class SaveReminderFragment : BaseFragment() {
             baseViewModel.validateAndSaveReminder(reminderData)
 
             if (latitude != null && longitude != null && !TextUtils.isEmpty(title)) {
-                addGeofence(LatLng(latitude, longitude), id)
+//                addGeofence(LatLng(latitude, longitude), id)
             }
         }
     }
@@ -82,21 +82,21 @@ class SaveReminderFragment : BaseFragment() {
         baseViewModel.onClear()
     }
 
-    @SuppressLint("MissingPermission")
-    private fun addGeofence(latLng: LatLng, geofenceId: String) {
-
-        val geofence: Geofence = geofenceHelper.getGeofence(
-            geofenceId,
-            latLng,
-            500f,
-            Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
-        )
-        val geofencingRequest: GeofencingRequest = geofenceHelper.getGeofencingRequest(geofence)
-        val pendingIntent: PendingIntent? = geofenceHelper.getGeofencePendingIntent()
-
-        geofencingClient.addGeofences(geofencingRequest, pendingIntent)
-            .addOnFailureListener {
-                Toast.makeText(context, "Please give background location permission", Toast.LENGTH_LONG).show()
-            }
-    }
+//    @SuppressLint("MissingPermission")
+//    private fun addGeofence(latLng: LatLng, geofenceId: String) {
+//
+//        val geofence: Geofence = geofenceHelper.getGeofence(
+//            geofenceId,
+//            latLng,
+//            500f,
+//            Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
+//        )
+//        val geofencingRequest: GeofencingRequest = geofenceHelper.getGeofencingRequest(geofence)
+//        val pendingIntent: PendingIntent? = geofenceHelper.getGeofencePendingIntent()
+//
+//        geofencingClient.addGeofences(geofencingRequest, pendingIntent)
+//            .addOnFailureListener {
+//                Toast.makeText(context, "Please give background location permission", Toast.LENGTH_LONG).show()
+//            }
+//    }
 }
