@@ -5,14 +5,18 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
+import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.getOrAwaitValue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runBlockingTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.stopKoin
 
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
@@ -27,46 +31,68 @@ class RemindersListViewModelTest {
     var mainCoroutineRule = MainCoroutineRule()
 
     // Subject under test
-    private lateinit var reminderListViewModel: RemindersListViewModel
+    private lateinit var viewModel: RemindersListViewModel
 
     // Use a fake repository to be injected into the view model.
-    private lateinit var remindersRepository: FakeDataSource
+    private lateinit var repository: FakeDataSource
 
     @Before
     fun setupRemindersListViewModel() {
         // Initialise the repository with no reminders.
-        remindersRepository = FakeDataSource()
+        repository = FakeDataSource()
 
-        reminderListViewModel = RemindersListViewModel(
-            ApplicationProvider.getApplicationContext(), remindersRepository)
+        viewModel = RemindersListViewModel(
+            ApplicationProvider.getApplicationContext(), repository)
+    }
+
+    @After
+    fun tearDown() {
+        stopKoin()
+    }
+
+    @Test
+    fun t() {
+        // GIVEN
+        val reminder = ReminderDTO(
+            "title",
+            "description",
+            "location",
+            0.0,
+            0.0)
+
+        // WHEN
+
+        // THEN
     }
 
     @Test
     fun shouldReturnError() {
-        // Make the repository return errors.
-        remindersRepository.setReturnError(true)
+        // GIVEN - Make the repository return errors.
+        repository.setReturnError(true)
 
-        reminderListViewModel.loadReminders()
+        // WHEN
+        viewModel.loadReminders()
 
-        assertThat(reminderListViewModel.showNoData.getOrAwaitValue(), `is`(true))
-        assertThat(reminderListViewModel.showSnackBar.getOrAwaitValue(), `is`("Test exception"))
+        // THEN
+        assertThat(viewModel.showNoData.getOrAwaitValue(), `is`(true))
+        assertThat(viewModel.showSnackBar.getOrAwaitValue(), `is`("Error retrieving reminders"))
     }
 
     @Test
     fun check_loading() {
-        // Pause dispatcher so you can verify initial values.
+        // GIVEN - Pause dispatcher so you can verify initial values.
         mainCoroutineRule.pauseDispatcher()
 
-        // Load the reminders in the view model.
-        reminderListViewModel.loadReminders()
+        // WHEN - Load the reminders in the view model.
+        viewModel.loadReminders()
 
-        // Then progress indicator is shown.
-        assertThat(reminderListViewModel.showLoading.getOrAwaitValue(), `is`(true))
+        // THEN - Progress indicator is shown.
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(true))
 
         // Execute pending coroutines actions.
         mainCoroutineRule.resumeDispatcher()
 
-        // Then progress indicator is hidden.
-        assertThat(reminderListViewModel.showLoading.getOrAwaitValue(), `is`(false))
+        // THEN - progress indicator is hidden.
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
 }

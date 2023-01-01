@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
+import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.getOrAwaitValue
 import com.udacity.project4.locationreminders.reminderslist.ReminderDataItem
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,18 +32,18 @@ class SaveReminderViewModelTest {
     var mainCoroutineRule = MainCoroutineRule()
 
     // Subject under test
-    private lateinit var saveReminderViewModel: SaveReminderViewModel
+    private lateinit var viewModel: SaveReminderViewModel
 
     // Use a fake repository to be injected into the view model.
-    private lateinit var remindersRepository: FakeDataSource
+    private lateinit var repository: FakeDataSource
 
     @Before
     fun setupRemindersListViewModel() {
         // Initialise the repository with no reminders.
-        remindersRepository = FakeDataSource()
+        repository = FakeDataSource()
 
-        saveReminderViewModel = SaveReminderViewModel(
-            ApplicationProvider.getApplicationContext(), remindersRepository)
+        viewModel = SaveReminderViewModel(
+            ApplicationProvider.getApplicationContext(), repository)
     }
 
     @After
@@ -51,17 +52,97 @@ class SaveReminderViewModelTest {
     }
 
     @Test
-    fun shouldReturnError() = runBlockingTest {
-        val reminderDateItem = ReminderDataItem(
+    fun givenEmptyTitle_shouldReturnError() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDataItem(
             "",
             "description",
             "location",
             0.0,
-            0.0,
-            "id")
-        saveReminderViewModel.validateEnteredData(reminderDateItem)
+            0.0)
 
-        assertThat(saveReminderViewModel.validateEnteredData(reminderDateItem), `is`(false))
+        // THEN
+        assertThat(viewModel.validateEnteredData(reminder), `is`(false))
+    }
+
+    @Test
+    fun givenNullTitle_shouldReturnError() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDataItem(
+            null,
+            "description",
+            "location",
+            0.0,
+            0.0)
+
+        // THEN
+        assertThat(viewModel.validateEnteredData(reminder), `is`(false))
+    }
+
+    @Test
+    fun givenEmptyLocation_shouldReturnError() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDataItem(
+            "title",
+            "description",
+            "",
+            0.0,
+            0.0)
+
+        // THEN
+        assertThat(viewModel.validateEnteredData(reminder), `is`(false))
+    }
+
+    @Test
+    fun givenNullLocation_shouldReturnError() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDataItem(
+            "title",
+            "description",
+            null,
+            0.0,
+            0.0)
+
+        // THEN
+        assertThat(viewModel.validateEnteredData(reminder), `is`(false))
+    }
+
+    @Test
+    fun givenProperItem_shouldNotReturnError() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDataItem(
+            "title",
+            "description",
+            "location",
+            0.0,
+            0.0)
+
+        // THEN
+        assertThat(viewModel.validateEnteredData(reminder), `is`(true))
+    }
+
+    @Test
+    fun saveReminder_checkSaved() = runBlockingTest {
+        // GIVEN
+        val reminder = ReminderDTO(
+            "title",
+            "description",
+            "location",
+            0.0,
+            0.0)
+        viewModel.saveReminder(ReminderDataItem(
+            reminder.title,
+            reminder.description,
+            reminder.location,
+            reminder.latitude,
+            reminder.longitude,
+            reminder.id))
+
+        // WHEN
+        val saved = repository.reminders.first()
+
+        // THEN
+        assertThat(reminder, `is`(saved))
     }
 
     @Test
@@ -75,17 +156,16 @@ class SaveReminderViewModelTest {
             "description",
             "location",
             0.0,
-            0.0,
-            "id")
-        saveReminderViewModel.validateAndSaveReminder(reminderDateItem)
+            0.0)
+        viewModel.validateAndSaveReminder(reminderDateItem)
 
         // Then progress indicator is shown.
-        assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(true))
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(true))
 
         // Execute pending coroutines actions.
         mainCoroutineRule.resumeDispatcher()
 
         // Then progress indicator is hidden.
-        assertThat(saveReminderViewModel.showLoading.getOrAwaitValue(), `is`(false))
+        assertThat(viewModel.showLoading.getOrAwaitValue(), `is`(false))
     }
 }
