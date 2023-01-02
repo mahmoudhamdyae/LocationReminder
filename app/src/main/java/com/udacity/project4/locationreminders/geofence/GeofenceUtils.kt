@@ -1,5 +1,6 @@
 package com.udacity.project4.locationreminders.geofence
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.ContextWrapper
@@ -9,8 +10,6 @@ import com.google.android.gms.location.GeofenceStatusCodes
 import com.google.android.gms.location.GeofencingRequest
 import com.google.android.gms.maps.model.LatLng
 import com.udacity.project4.R
-
-private const val TAG = "GeofenceUtil"
 
 class GeofenceHelper(base: Context?) : ContextWrapper(base) {
     /**
@@ -51,6 +50,7 @@ class GeofenceHelper(base: Context?) : ContextWrapper(base) {
             .build()
     }
 
+    @SuppressLint("UnspecifiedImmutableFlag")
     fun getGeofencePendingIntent(): PendingIntent? {
         if (pendingIntent != null) {
             return pendingIntent

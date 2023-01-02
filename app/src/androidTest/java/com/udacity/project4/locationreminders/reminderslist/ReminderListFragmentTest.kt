@@ -6,7 +6,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
-import androidx.test.core.app.ApplicationProvider
+import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
@@ -25,6 +25,7 @@ import com.udacity.project4.util.monitorFragment
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.core.IsNot.not
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -57,8 +58,9 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
      * at this step we will initialize Koin related code to be able to use it in out testing.
      */
     @Before
-    fun setup() {
-        appContext = ApplicationProvider.getApplicationContext()
+    fun init() {
+        stopKoin()//stop the original app koin
+        appContext = getApplicationContext()
         val myModule = module {
             viewModel {
                 RemindersListViewModel(
@@ -66,7 +68,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
                     get() as ReminderDataSource
                 )
             }
-            viewModel {
+            single {
                 SaveReminderViewModel(
                     appContext,
                     get() as ReminderDataSource
@@ -75,22 +77,25 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
             single { RemindersLocalRepository(get()) as ReminderDataSource }
             single { LocalDB.createRemindersDao(appContext) }
         }
-        // New koin module
+        //declare a new koin module
         startKoin {
             modules(listOf(myModule))
         }
-
-        // Get our real repository
+        //Get our real repository
         repository = get()
 
-        // Clear the data to start fresh
+        //clear the data to start fresh
         runBlocking {
             repository.deleteAllReminders()
         }
     }
 
     @After
-    fun tearDown() = stopKoin()
+    fun clear() {
+        runBlocking {
+            repository.deleteAllReminders()
+        }
+    }
 
     /**
      * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
@@ -113,7 +118,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
 
     // Test the navigation of the fragments.
     @Test
-    fun clickAddReminderButton_navigateToSaveReminderFragment() = runBlocking {
+    fun clickAddReminderButton_navigateToSaveReminderFragment2() = runBlocking {
         // GIVEN - On the home screen
         val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
         dataBindingIdlingResource.monitorFragment(scenario)
@@ -134,35 +139,38 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
 
     // Test the displayed data on the UI.
     @Test
-    fun saveReminder_showInRecyclerView() = runBlocking {
-        // GIVEN - Save a Reminder
+    fun saveReminder_showInRecyclerView() {
+        // GIVEN - Save a reminder
         val reminderDateItem = ReminderDTO(
             "title",
             "description",
             "location",
             0.0,
             0.0)
-        repository.saveReminder(reminderDateItem)
+        runBlocking {
+            repository.saveReminder(reminderDateItem)
+        }
 
         // WHEN - ReminderList fragment launched to display reminders
-        val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
-        dataBindingIdlingResource.monitorFragment(scenario)
+        val fragment = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(fragment)
 
         // THEN - Verify that the reminder is displayed in the recycler view
         onView(withId(R.id.title_item)).check(matches(withText("title")))
         onView(withId(R.id.description_item)).check(matches(withText("description")))
         onView(withId(R.id.location_item)).check(matches(withText("location")))
-        onView(withId(R.id.noDataTextView)).check(matches(withEffectiveVisibility(Visibility.GONE)))
+        onView(withId(R.id.noDataTextView)).check(matches(not(isDisplayed())))
     }
 
     @Test
     fun loadReminders_noData() {
-        val scenario = launchFragmentInContainer<ReminderListFragment>(
-            Bundle(),
-            R.style.AppTheme
-        )
-        dataBindingIdlingResource.monitorFragment(scenario)
+        // GIVEN - Empty list
 
-        onView(withId(R.id.noDataTextView)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        // WHEN - Reminder list fragment is launched
+        val fragment = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(fragment)
+
+        // THEN - Verify no items exists
+        onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
     }
 }
