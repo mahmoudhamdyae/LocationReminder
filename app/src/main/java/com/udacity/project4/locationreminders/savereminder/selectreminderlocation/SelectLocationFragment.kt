@@ -71,20 +71,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         return binding.root
     }
 
-    private fun setLocation(latLng: LatLng, location: String = "") {
-        latitude = latLng.latitude
-        longitude = latLng.longitude
-        location2 = getLocation(location)
-    }
-
-    private fun getLocation(location: String): String {
-        if (location.isEmpty()) {
-            location2 = getString(R.string.dropped_pin)
-            createDialog()
-        }
-        return location
-    }
-
     private fun onLocationSelected() {
         baseViewModel.latitude.value = latitude
         baseViewModel.longitude.value = longitude
@@ -140,7 +126,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                 }
         }
 
-        setMapLongClick(map) // Set a long click listener for the map.
+        setMapClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
         setMapStyle(map) // Set the custom map style.
 
@@ -152,9 +138,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
      *
      * @param map The GoogleMap to attach the listener to.
      */
-    private fun setMapLongClick(map: GoogleMap) {
+    private fun setMapClick(map: GoogleMap) {
         // Add a blue marker to the map when the user performs a long click.
-        map.setOnMapLongClickListener { latLng ->
+        map.setOnMapClickListener { latLng ->
             // A Snippet is Additional text that's displayed below the title.
             val snippet = String.format(
                 Locale.getDefault(),
@@ -171,8 +157,14 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
 
-            setLocation(latLng)
+            setLocation(latLng, getString(R.string.dropped_pin))
         }
+    }
+
+    private fun setLocation(latLng: LatLng, location: String) {
+        latitude = latLng.latitude
+        longitude = latLng.longitude
+        location2 = location
     }
 
     /**
@@ -212,30 +204,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             )
         } catch (_: Resources.NotFoundException) {
         }
-    }
-
-    private fun createDialog() {
-        val builder: AlertDialog.Builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Title")
-
-        // Set up the input
-        val input = EditText(requireContext())
-        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        input.hint = getString(R.string.dialog_text)
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        builder.setView(input)
-
-        // Set up the buttons
-        builder.setPositiveButton(getString(R.string.ok_button)) { _, _ ->
-            // Here you get get input text from the Edit Text
-            location2 = input.text.toString()
-        }
-        builder.setNegativeButton(getString(R.string.cancel_button)) { dialog, _ ->
-            location2 = getString(R.string.dropped_pin)
-            dialog.cancel()
-        }
-
-        builder.show()
     }
 
     // Checks that users have given permission

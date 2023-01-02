@@ -23,11 +23,12 @@ import java.util.*
 @SmallTest
 class RemindersDaoTest {
 
+    private lateinit var dao: RemindersDao
+    private lateinit var database: RemindersDatabase
+
     // Executes each task synchronously using Architecture Components.
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
-
-    private lateinit var database: RemindersDatabase
 
     @Before
     fun initDb() {
@@ -37,37 +38,74 @@ class RemindersDaoTest {
             getApplicationContext(),
             RemindersDatabase::class.java
         ).build()
+        dao = database.reminderDao()
     }
 
     @After
     fun closeDb() = database.close()
 
     @Test
-    fun insertTaskAndGetById() = runBlockingTest {
+    fun saveReminderAndGetById() = runBlockingTest {
         // GIVEN - Insert a reminder.
         val reminderDateItem = ReminderDTO(
             "title",
             "description",
             "location",
             0.0,
-            0.0,
-            "id")
-        database.reminderDao().saveReminder(reminderDateItem)
+            0.0)
+        dao.saveReminder(reminderDateItem)
 
         // WHEN - Get the reminder by id from the database.
-        val loaded = database.reminderDao().getReminderById(reminderDateItem.id)
+        val loaded = dao.getReminderById(reminderDateItem.id)
 
         // THEN - The loaded data contains the expected values.
         assertThat(loaded, `is`(reminderDateItem))
     }
 
     @Test
-    fun predictErrorsMessages() = runBlockingTest {
+    fun saveRemindersAndGetAll() = runBlockingTest {
+        // GIVEN - Insert a reminder.
+        val reminder = ReminderDTO(
+            "title",
+            "description",
+            "location",
+            0.0,
+            0.0)
+        dao.saveReminder(reminder)
+
+        // WHEN - Get all the reminder from the database.
+        val reminders = dao.getReminders()
+
+        // THEN - The loaded data contains the expected values.
+        assertThat(reminders.contains(reminder), `is`(true))
+    }
+
+    @Test
+    fun saveRemindersAndDeleteAll() = runBlockingTest {
+        // GIVEN - Insert a reminder.
+        val reminder = ReminderDTO(
+            "title",
+            "description",
+            "location",
+            0.0,
+            0.0)
+        dao.saveReminder(reminder)
+
+        // WHEN - Get all the reminder from the database.
+        dao.deleteAllReminders()
+        val reminders = dao.getReminders()
+
+        // THEN - The loaded data contains the expected values.
+        assertThat(reminders.contains(reminder), `is`(false))
+    }
+
+    @Test
+    fun getReminderById_returnNull() = runBlockingTest {
         // GIVEN - a random reminder id
         val reminderId = UUID.randomUUID().toString()
 
         // WHEN - Get the reminder by id from the database.
-        val loaded = database.reminderDao().getReminderById(reminderId)
+        val loaded = dao.getReminderById(reminderId)
 
         // THEN - The loaded data contains the expected values.
         assertNull(loaded)

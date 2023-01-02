@@ -1,86 +1,85 @@
 package com.udacity.project4.locationreminders.data.local
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import com.udacity.project4.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
+import com.udacity.project4.locationreminders.data.dto.Result.Error
 import com.udacity.project4.locationreminders.data.dto.Result.Success
-import org.junit.Assert.assertNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.Executors
 
 @ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 class RemindersLocalRepositoryTest {
 
+    private lateinit var database: RemindersDatabase
+    private lateinit var repository: RemindersLocalRepository
+
     // Executes each reminder synchronously using Architecture Components.
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
 
-    @get:Rule
-    var mainCoroutineRule = MainCoroutineRule()
-
-    private lateinit var dao: FakeReminderDao
-    private lateinit var repository: RemindersLocalRepository
-
     @Before
-    fun setup() {
-        dao = FakeReminderDao()
+    fun initDb() {
+        // Using an in-memory database so that the information stored here disappears when the
+        // process is killed.
+        database = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(), RemindersDatabase::class.java
+        ).setTransactionExecutor(Executors.newSingleThreadExecutor()).build()
+        val dao = database.reminderDao()
 
-        repository =
-            RemindersLocalRepository(
-                dao,
-                Dispatchers.Main
-            )
+        repository = RemindersLocalRepository(dao, Dispatchers.Unconfined)
     }
 
+    @After
+    fun closeDataBase() = database.close()
+
     @Test
-    fun saveReminder_retrievesReminder(): Unit = runBlocking {
+    fun saveReminder_retrievesReminder() = runBlocking {
         // GIVEN - A new reminder saved in the database.
-        val newReminder = ReminderDTO(
-                "",
+        val reminder = ReminderDTO(
+                "title",
                 "description",
                 "location",
                 0.0,
-                0.0,
-                "id"
-            )
-        repository.saveReminder(newReminder)
+                0.0)
+        repository.saveReminder(reminder)
 
         // WHEN  - Reminder retrieved by ID.
-        val result = repository.getReminder(newReminder.id) as? Success
+        val result = repository.getReminder(reminder.id) as? Success
 
         // THEN - Same reminder is returned.
-        assertThat(result, `is`(Success(newReminder)))
+        assertThat(result, `is`(Success(reminder)))
     }
 
     @Test
     fun saveReminder_retrievesError(): Unit = runBlocking {
         // GIVEN - A new reminder saved in the database.
-        val newReminder = ReminderDTO(
-            "",
+        val reminder = ReminderDTO(
+            "title",
             "description",
             "location",
             0.0,
-            0.0,
-            "id"
-        )
-        repository.saveReminder(newReminder)
+            0.0)
+        repository.saveReminder(reminder)
 
         // WHEN  - Reminder retrieved by ID.
-        dao.shouldReturnError = true
-        val result = repository.getReminder(newReminder.id) as? Success
+        val result = repository.getReminder("1") as? Error
 
-        // THEN - Same reminder is returned.
-        assertNull(result)
+        // THEN - Will Return Error.
+        assertThat(result, `is`(Error("Reminder not found!")))
     }
 }

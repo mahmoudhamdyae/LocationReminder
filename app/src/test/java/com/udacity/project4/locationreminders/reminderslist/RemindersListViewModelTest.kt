@@ -51,7 +51,7 @@ class RemindersListViewModelTest {
     }
 
     @Test
-    fun t() {
+    fun saveReminder_loadThem() = runBlockingTest {
         // GIVEN
         val reminder = ReminderDTO(
             "title",
@@ -59,10 +59,18 @@ class RemindersListViewModelTest {
             "location",
             0.0,
             0.0)
+        repository.saveReminder(reminder)
 
         // WHEN
+        viewModel.loadReminders()
 
         // THEN
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].id, `is`(reminder.id))
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].title, `is`(reminder.title))
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].description, `is`(reminder.description))
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].location, `is`(reminder.location))
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].latitude, `is`(reminder.latitude))
+        assertThat(viewModel.remindersList.getOrAwaitValue()[0].longitude, `is`(reminder.longitude))
     }
 
     @Test
