@@ -8,7 +8,6 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
-import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.udacity.project4.locationreminders.RemindersActivity
@@ -21,9 +20,9 @@ import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.core.IsNot.not
 import org.junit.After
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -43,9 +42,10 @@ class RemindersActivityTest :
     private lateinit var appContext: Application
     // An Idling Resource that waits for Data Binding to have no pending bindings
     private val dataBindingIdlingResource = DataBindingIdlingResource()
-
-    @get:Rule
-    var activityScenarioRule = ActivityScenarioRule(RemindersActivity::class.java)
+//    private lateinit var decorView: View
+//
+//    @get:Rule
+//    var activityScenarioRule = ActivityScenarioRule(RemindersActivity::class.java)
 
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
@@ -83,8 +83,16 @@ class RemindersActivityTest :
         runBlocking {
             repository.deleteAllReminders()
         }
+
+//        activityScenarioRule.scenario.onActivity { activity ->
+//            decorView = activity.window.decorView
+//        }
     }
 
+    /**
+     * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
+     * are not scheduled in the main Looper (for example when executed on a different thread).
+     */
     @Before
     fun registerIdlingResource() {
         IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
@@ -108,7 +116,7 @@ class RemindersActivityTest :
 
         onView(withId(R.id.addReminderFAB)).perform(click())
 
-        // sets & saves the location
+        // Sets & saves the location
         onView(withId(R.id.selectLocation)).perform(click())
         onView(withId(R.id.map)).perform(click())
         onView(withId(R.id.save_button)).perform(click())
@@ -122,6 +130,15 @@ class RemindersActivityTest :
         // Save Reminder
         onView(withId(R.id.saveReminder)).perform(click())
 
+//        onView(withText("Reminder Saved !")).inRoot(
+//            withDecorView(CoreMatchers.not(decorView))
+//        ).check(matches(isDisplayed()))
+        onView(withText("Reminder Saved !")).inRoot(ToastMatcher())
+            .check(matches(not(isDisplayed())))
+//        onView(withText("Reminder Saved !"))
+//        .inRoot(withDecorView(Matchers.not(decorView)))
+//        .check(matches(isDisplayed()));
+
         onView(withText(reminderTitle)).check(matches(isDisplayed()))
         onView(withText(reminderDescription)).check(matches(isDisplayed()))
 
@@ -129,6 +146,42 @@ class RemindersActivityTest :
         scenario.close()
     }
 
+    @Test
+    fun lunchMainActivity_showSnakeBar() {
+        // Launch Activity
+        val scenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(scenario)
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderTitle)).perform(typeText("Buying"))
+        onView(withId(R.id.reminderDescription)).perform(typeText("I need to buy something from this place"), closeSoftKeyboard())
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(com.google.android.material.R.id.snackbar_text)).check(matches
+            (withText(appContext.getString(R.string.select_location))))
+
+        // Close Activity
+        scenario.close()
+    }
+
+    @Test
+    fun lunchMainActivity_showToast() {
+        // Launch Activity
+        val scenario=ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(scenario)
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderTitle)).perform(typeText("Buying"))
+        onView(withId(R.id.reminderDescription)).perform(typeText("I need to buy something from this place"), closeSoftKeyboard())
+        onView(withId(R.id.selectLocation)).perform(click())
+        onView(withId(R.id.map)).perform(click())
+        onView(withId(R.id.save_button)).perform(click())
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withText(appContext.getString(R.string.reminder_saved)))
+            .inRoot(ToastMatcher()).check(matches(isDisplayed()))
+
+        // Close Activity
+        scenario.close()
+    }
 
     @Test
     fun invalidReminder_TitleError() {

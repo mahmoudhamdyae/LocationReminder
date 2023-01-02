@@ -59,7 +59,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
      */
     @Before
     fun init() {
-        stopKoin()//stop the original app koin
+        stopKoin() // Stop the original app koin
         appContext = getApplicationContext()
         val myModule = module {
             viewModel {

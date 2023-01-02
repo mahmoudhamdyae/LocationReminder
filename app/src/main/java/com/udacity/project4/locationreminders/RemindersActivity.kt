@@ -14,7 +14,6 @@ import kotlinx.android.synthetic.main.activity_reminders.*
  * The RemindersActivity that holds the reminders fragments
  */
 @SuppressLint("UnspecifiedImmutableFlag")
-@Suppress("DEPRECATION")
 class RemindersActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
