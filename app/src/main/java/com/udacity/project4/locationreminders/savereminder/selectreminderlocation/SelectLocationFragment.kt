@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.IntentSender
-import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
@@ -12,7 +11,6 @@ import android.view.*
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -132,17 +130,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         map = googleMap
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        if (isPermissionGranted() && isDeviceLocationEnabled()) {
-            fusedLocationProviderClient.lastLocation
-                .addOnSuccessListener { location->
-                    if (location != null) {
-                        val homeLatLng = LatLng(location.latitude, location.longitude)
-                        val zoomLevel = 18f
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
-                        map.addMarker(MarkerOptions().position(homeLatLng))
-                    }
-                }
-        }
 
         setMapClick(map) // Set a long click listener for the map.
         setPoiClick(map) // Set a click listener for points of interest.
@@ -192,12 +179,12 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
      */
     private fun setPoiClick(map: GoogleMap) {
         map.setOnPoiClickListener { poi ->
+            map.clear()
             val poiMarker = map.addMarker(
                 MarkerOptions()
                     .position(poi.latLng)
                     .title(poi.name)
             )
-            map.clear()
             poiMarker?.showInfoWindow()
 
             updateLocation(poi.latLng , poi.name)
@@ -225,11 +212,12 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     }
 
     // Checks that users have given permission
-    private fun isPermissionGranted() = (ActivityCompat.checkSelfPermission(
-            requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-            requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED)
+    private fun isPermissionGranted() : Boolean {
+        @Suppress("DEPRECATED_IDENTITY_EQUALS")
+        return true/*ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED*/
+    }
 
     /**
      * Checks for location permissions, and requests them if they are missing.
@@ -238,14 +226,11 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     @SuppressLint("MissingPermission")
     private fun enableMyLocation() {
         if (isPermissionGranted()) {
-            if (isDeviceLocationEnabled()) {
-                getMyCurrentLocation()
-            } else {
+            if (!isDeviceLocationEnabled()) {
                 enableDeviceLocation()
+            } else {
+                locationPermissionResultRequest.launch(permissions)
             }
-        }
-        else {
-            locationPermissionResultRequest.launch(permissions)
         }
     }
 
@@ -274,7 +259,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
 
         // Location Enabled
         locationSettingsResponseTask.addOnSuccessListener {
-            baseViewModel.showSnackBar.value = "successhaha"
             getMyCurrentLocation()
         }
 
@@ -293,23 +277,15 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
 
     @SuppressLint("MissingPermission")
     private fun getMyCurrentLocation() {
-        if (::map.isInitialized){
-            map.isMyLocationEnabled = true
-        }
-        fusedLocationProviderClient.lastLocation.addOnCompleteListener {
-            if (it.isSuccessful) {
-                map.isMyLocationEnabled = true
-                val myLocation =
-                    LatLng(it.result.latitude, it.result.longitude)
-                map.animateCamera(
-                    CameraUpdateFactory.newLatLngZoom(
-                        myLocation, 18f
-                    )
-                )
-            } else {
-                map.isMyLocationEnabled = false
+        fusedLocationProviderClient.lastLocation
+            .addOnSuccessListener { location->
+                if (location != null) {
+                    val homeLatLng = LatLng(location.latitude, location.longitude)
+                    val zoomLevel = 18f
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
+                    map.addMarker(MarkerOptions().position(homeLatLng))
+                }
             }
-        }
     }
 
     override fun onMyLocationButtonClick(): Boolean {
