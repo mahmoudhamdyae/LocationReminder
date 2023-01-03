@@ -115,7 +115,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
 
         enableMyLocation() // Enable location tracking.
 
-        map.isMyLocationEnabled = true
         map.setOnMyLocationButtonClickListener(this)
         map.setOnMyLocationClickListener(this)
     }
@@ -190,16 +189,11 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     }
 
     // Checks that users have given permission
-    private fun isPermissionGranted(): Boolean {
+    @Suppress("DEPRECATED_IDENTITY_EQUALS")
+    private fun isPermissionGranted() : Boolean {
         return ContextCompat.checkSelfPermission(
             requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-                &&
-                ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
+            Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED
     }
 
     /**
@@ -278,84 +272,9 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         }
     }
 
-//    @SuppressLint("SuspiciousIndentation")
-//    private val locationSettingPermissionResultRequest =
-//        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-//            if (result.resultCode == Activity.RESULT_OK) {
-////                getMyCurrentLocation()
-//            } else {
-//                baseViewModel.showErrorMessage.value = getString(R.string.deny_to_open_location)
-//            }
-//        }
-
-    /**
-     *  Uses the Location Client to check the current state of location settings, and gives the user
-     *  the opportunity to turn on location services within our app.
-     */
-//    private fun enableDeviceLocation(resolve:Boolean = true) {
-//        val locationRequest = LocationRequest.create().apply {
-//            priority = LocationRequest.PRIORITY_LOW_POWER
-//        }
-//        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-//        val settingsClient = LocationServices.getSettingsClient(requireContext())
-//        val locationSettingsResponseTask =
-//            settingsClient.checkLocationSettings(builder.build())
-//
-//        // Location Enabled
-//        locationSettingsResponseTask.addOnSuccessListener {
-//            getMyCurrentLocation()
-//        }
-//
-//        // Location not Enabled
-//        locationSettingsResponseTask.addOnFailureListener { exception ->
-//            if (exception is ResolvableApiException && resolve){
-//                try {
-//                    locationSettingPermissionResultRequest.launch(
-//                        IntentSenderRequest.Builder(exception.resolution.intentSender).build()
-//                    )
-//                } catch (_: IntentSender.SendIntentException) {
-//                }
-//            }
-//        }
-//    }
-
-//    @SuppressLint("MissingPermission")
-//    private fun getMyCurrentLocation() {
-//        fusedLocationProviderClient.lastLocation
-//            .addOnSuccessListener { location->
-//                if (location != null) {
-//                    val homeLatLng = LatLng(location.latitude, location.longitude)
-//                    val zoomLevel = 18f
-//                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(homeLatLng, zoomLevel))
-//                    map.addMarker(MarkerOptions().position(homeLatLng))
-//                }
-//            }
-//    }
-
-    override fun onMyLocationButtonClick(): Boolean {
-        enableMyLocation()
-        return false
-    }
-
-    override fun onMyLocationClick(location: Location) {
-        updateLocation(LatLng(location.latitude, location.longitude), "My Location")
-    }
-
-    companion object {
-        private const val REQUEST_TURN_DEVICE_LOCATION_ON = 1002
-        private const val REQUEST_LOCATION_PERMISSION = 1
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            REQUEST_TURN_DEVICE_LOCATION_ON -> {
-                zoomToCurrentLocation(false)
-            }
-        }
-    }
-
+    // Callback for the result from requesting permissions.
+    // This method is invoked for every call on requestPermissions(android.app.Activity, String[],
+    // int).
     @Deprecated("Deprecated in Java")
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -384,5 +303,19 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
                     }.show()
             }
         }
+    }
+
+    override fun onMyLocationButtonClick(): Boolean {
+        enableMyLocation()
+        return false
+    }
+
+    override fun onMyLocationClick(location: Location) {
+        updateLocation(LatLng(location.latitude, location.longitude), "My Location")
+    }
+
+    companion object {
+        private const val REQUEST_TURN_DEVICE_LOCATION_ON = 1002
+        private const val REQUEST_LOCATION_PERMISSION = 1
     }
 }
