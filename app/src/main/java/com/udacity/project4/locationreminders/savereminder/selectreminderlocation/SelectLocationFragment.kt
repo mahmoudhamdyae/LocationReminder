@@ -8,14 +8,19 @@ import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
+import android.os.Looper
+import android.renderscript.RenderScript
+import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener
@@ -32,7 +37,6 @@ import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import java.util.*
 
-private const val REQUEST_LOCATION_PERMISSION = 1
 private const val REQUEST_TURN_DEVICE_LOCATION_ON = 29
 
 class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
@@ -57,6 +61,16 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
             }
         }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) ||
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            // If true = user denied the request 2 times
+            showAlertDialogForLocationPermission()
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -75,12 +89,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        if (shouldShowRequestPermissionRationale(
-                Manifest.permission.ACCESS_FINE_LOCATION) || shouldShowRequestPermissionRationale(
-                Manifest.permission.ACCESS_COARSE_LOCATION)) { // if true = user denied the request 2 times
-            showAlertDialogForLocationPermission()
-        }
-
         return binding.root
     }
 
@@ -89,6 +97,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         baseViewModel.longitude.value = latLng.longitude
         baseViewModel.reminderSelectedLocationStr.value = location
 
+        binding.saveButton.visibility = View.VISIBLE
         binding.saveButton.setOnClickListener {
             baseViewModel.navigateBack()
         }
@@ -130,7 +139,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         map = googleMap
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
-        if (isPermissionGranted()) {
+        if (isPermissionGranted() && isDeviceLocationEnabled()) {
             fusedLocationProviderClient.lastLocation
                 .addOnSuccessListener { location->
                     if (location != null) {
@@ -169,6 +178,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
                 latLng.longitude
             )
 
+            map.clear()
             map.addMarker(
                 MarkerOptions()
                     .position(latLng)
@@ -194,6 +204,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
                     .position(poi.latLng)
                     .title(poi.name)
             )
+            map.clear()
             poiMarker?.showInfoWindow()
 
             updateLocation(poi.latLng , poi.name)
@@ -221,12 +232,11 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     }
 
     // Checks that users have given permission
-    private fun isPermissionGranted() : Boolean {
-        @Suppress("DEPRECATED_IDENTITY_EQUALS")
-        return ContextCompat.checkSelfPermission(
-            requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION) === PackageManager.PERMISSION_GRANTED
-    }
+    private fun isPermissionGranted() = (ActivityCompat.checkSelfPermission(
+            requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+            requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED)
 
     /**
      * Checks for location permissions, and requests them if they are missing.
@@ -243,23 +253,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         }
         else {
             locationPermissionResultRequest.launch(permissions)
-        }
-    }
-
-    // Callback for the result from requesting permissions.
-    // This method is invoked for every call on requestPermissions(android.app.Activity, String[],
-    // int).
-    @Deprecated("Deprecated in Java")
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray) {
-        // Check if location permissions are granted and if so enable the
-        // location data layer.
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                enableMyLocation()
-            }
         }
     }
 
@@ -295,8 +288,10 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
 
     @SuppressLint("MissingPermission")
     private fun getMyCurrentLocation() {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-        fusedLocationClient.lastLocation.addOnCompleteListener {
+        if (::map.isInitialized){
+            map.isMyLocationEnabled = true
+        }
+        fusedLocationProviderClient.lastLocation.addOnCompleteListener {
             if (it.isSuccessful) {
                 map.isMyLocationEnabled = true
                 val myLocation =
@@ -309,22 +304,6 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
             } else {
                 map.isMyLocationEnabled = false
             }
-        }
-    }
-
-    /**
-     *  When we get the result from asking the user to turn on device location, we call
-     *  checkDeviceLocationSettingsAndStartGeofence again to make sure it's actually on, but
-     *  we don't resolve the check to keep the user from seeing an endless loop.
-     */
-    @Deprecated("Deprecated in Java")
-    @Suppress("DEPRECATION")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
-            enableDeviceLocation(false)
-        } else {
-            Toast.makeText(context, "hah", Toast.LENGTH_LONG).show()
         }
     }
 
