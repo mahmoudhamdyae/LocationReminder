@@ -253,8 +253,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     private val locationSettingPermissionResultRequest =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-//                getMyCurrentLocation()
-                baseViewModel.showSnackBar.value = "yessssssssss"
+                //
             } else {
                 baseViewModel.showErrorMessage.value = getString(R.string.deny_to_open_location)
             }
