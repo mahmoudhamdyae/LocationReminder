@@ -2,25 +2,20 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Intent
+import android.app.Activity
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
-import android.os.Looper
-import android.renderscript.RenderScript
-import android.util.Log
 import android.view.*
-import android.widget.Toast
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener
@@ -36,8 +31,6 @@ import com.udacity.project4.utils.isDeviceLocationEnabled
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import java.util.*
-
-private const val REQUEST_TURN_DEVICE_LOCATION_ON = 29
 
 class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
     OnMyLocationClickListener, OnMapReadyCallback {
@@ -256,6 +249,17 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         }
     }
 
+    @SuppressLint("SuspiciousIndentation")
+    private val locationSettingPermissionResultRequest =
+        registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+//                getMyCurrentLocation()
+                baseViewModel.showSnackBar.value = "yessssssssss"
+            } else {
+                baseViewModel.showErrorMessage.value = getString(R.string.deny_to_open_location)
+            }
+        }
+
     /**
      *  Uses the Location Client to check the current state of location settings, and gives the user
      *  the opportunity to turn on location services within our app.
@@ -271,6 +275,7 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
 
         // Location Enabled
         locationSettingsResponseTask.addOnSuccessListener {
+            baseViewModel.showSnackBar.value = "successhaha"
             getMyCurrentLocation()
         }
 
@@ -278,8 +283,9 @@ class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
                 try {
-                    exception.startResolutionForResult(requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON)
+                    locationSettingPermissionResultRequest.launch(
+                        IntentSenderRequest.Builder(exception.resolution.intentSender).build()
+                    )
                 } catch (_: IntentSender.SendIntentException) {
                 }
             }
