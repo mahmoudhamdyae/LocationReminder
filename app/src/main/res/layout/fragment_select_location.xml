@@ -27,9 +27,7 @@
             android:background="@color/colorAccent"
             android:text="@string/save"
             android:textColor="@color/white"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            tools:visibility="visible" />
+            app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
