@@ -57,6 +57,8 @@
         Unknown error: the Geofence service is not available now
     </string>
     <string name="geofences_not_removed">Geofences not removed.</string>
+    <string name="location_permission_denied">Location Permission Denied</string>
+    <string name="location_permission_granted">Location Permission Granted</string>
 
     <!-- Error strings -->
     <string name="geofence_unknown_error">Unknown error: the Geofence service is not available now.</string>

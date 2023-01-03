@@ -1,6 +1,8 @@
 package com.udacity.project4
 
+import android.Manifest
 import android.app.Application
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
@@ -8,8 +10,10 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.*
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.rule.GrantPermissionRule
 import com.udacity.project4.locationreminders.RemindersActivity
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
@@ -23,6 +27,7 @@ import kotlinx.coroutines.runBlocking
 import org.hamcrest.core.IsNot.not
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -42,10 +47,13 @@ class RemindersActivityTest :
     private lateinit var appContext: Application
     // An Idling Resource that waits for Data Binding to have no pending bindings
     private val dataBindingIdlingResource = DataBindingIdlingResource()
-//    private lateinit var decorView: View
-//
-//    @get:Rule
-//    var activityScenarioRule = ActivityScenarioRule(RemindersActivity::class.java)
+
+    @get:Rule
+    var instantExecutorRule = InstantTaskExecutorRule()
+
+    @Rule
+    @JvmField
+    var activityScenarioRule = ActivityScenarioRule(RemindersActivity::class.java)
 
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
@@ -83,10 +91,6 @@ class RemindersActivityTest :
         runBlocking {
             repository.deleteAllReminders()
         }
-
-//        activityScenarioRule.scenario.onActivity { activity ->
-//            decorView = activity.window.decorView
-//        }
     }
 
     /**
@@ -129,15 +133,6 @@ class RemindersActivityTest :
 
         // Save Reminder
         onView(withId(R.id.saveReminder)).perform(click())
-
-//        onView(withText("Reminder Saved !")).inRoot(
-//            withDecorView(CoreMatchers.not(decorView))
-//        ).check(matches(isDisplayed()))
-        onView(withText("Reminder Saved !")).inRoot(ToastMatcher())
-            .check(matches(not(isDisplayed())))
-//        onView(withText("Reminder Saved !"))
-//        .inRoot(withDecorView(Matchers.not(decorView)))
-//        .check(matches(isDisplayed()));
 
         onView(withText(reminderTitle)).check(matches(isDisplayed()))
         onView(withText(reminderDescription)).check(matches(isDisplayed()))

@@ -6,18 +6,20 @@ import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.location.Location
 import android.os.Bundle
-import android.text.InputType
 import android.view.*
-import android.widget.EditText
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener
+import com.google.android.gms.maps.GoogleMap.OnMyLocationClickListener
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
@@ -33,7 +35,8 @@ import java.util.*
 private const val REQUEST_LOCATION_PERMISSION = 1
 private const val REQUEST_TURN_DEVICE_LOCATION_ON = 29
 
-class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
+class SelectLocationFragment : BaseFragment(), OnMyLocationButtonClickListener,
+    OnMyLocationClickListener, OnMapReadyCallback {
 
     // Use Koin to get the view model of the SaveReminder
     override val baseViewModel: SaveReminderViewModel by inject()
@@ -41,9 +44,18 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
 
     private lateinit var map: GoogleMap
 
-    private var latitude: Double = 0.0
-    private var longitude: Double = 0.0
-    private var location2: String = ""
+    private var permissions = arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+    private val locationPermissionResultRequest =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            if (result[Manifest.permission.ACCESS_FINE_LOCATION] == true || result[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
+                baseViewModel.showToast.value = getString(R.string.location_permission_granted)
+                getMyCurrentLocation()
+            } else {
+                baseViewModel.showSnackBarInt.value = R.string.location_permission_denied
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,23 +72,27 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
 
-        binding.saveButton.setOnClickListener {
-            onLocationSelected()
-            baseViewModel.navigateBack()
-        }
-
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+
+        if (shouldShowRequestPermissionRationale(
+                Manifest.permission.ACCESS_FINE_LOCATION) || shouldShowRequestPermissionRationale(
+                Manifest.permission.ACCESS_COARSE_LOCATION)) { // if true = user denied the request 2 times
+            showAlertDialogForLocationPermission()
+        }
 
         return binding.root
     }
 
-    private fun onLocationSelected() {
-        baseViewModel.latitude.value = latitude
-        baseViewModel.longitude.value = longitude
-        baseViewModel.reminderSelectedLocationStr.value = location2
-    }
+    private fun updateLocation(latLng: LatLng, location: String) {
+        baseViewModel.latitude.value = latLng.latitude
+        baseViewModel.longitude.value = latLng.longitude
+        baseViewModel.reminderSelectedLocationStr.value = location
 
+        binding.saveButton.setOnClickListener {
+            baseViewModel.navigateBack()
+        }
+    }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.map_options, menu)
@@ -131,6 +147,10 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setMapStyle(map) // Set the custom map style.
 
         enableMyLocation() // Enable location tracking.
+
+        map.isMyLocationEnabled = true
+        map.setOnMyLocationButtonClickListener(this)
+        map.setOnMyLocationClickListener(this)
     }
 
     /**
@@ -157,14 +177,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
             )
 
-            setLocation(latLng, getString(R.string.dropped_pin))
+            updateLocation(latLng, getString(R.string.dropped_pin))
         }
-    }
-
-    private fun setLocation(latLng: LatLng, location: String) {
-        latitude = latLng.latitude
-        longitude = latLng.longitude
-        location2 = location
     }
 
     /**
@@ -182,7 +196,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             )
             poiMarker?.showInfoWindow()
 
-            setLocation(poi.latLng , poi.name)
+            updateLocation(poi.latLng , poi.name)
         }
     }
 
@@ -228,11 +242,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             }
         }
         else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                REQUEST_LOCATION_PERMISSION
-            )
+            locationPermissionResultRequest.launch(permissions)
         }
     }
 
@@ -313,6 +323,28 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_TURN_DEVICE_LOCATION_ON) {
             enableDeviceLocation(false)
+        } else {
+            Toast.makeText(context, "hah", Toast.LENGTH_LONG).show()
         }
+    }
+
+    override fun onMyLocationButtonClick(): Boolean {
+        enableMyLocation()
+        return false
+    }
+
+    override fun onMyLocationClick(location: Location) {
+        updateLocation(LatLng(location.latitude, location.longitude), "My Location")
+    }
+
+    private fun showAlertDialogForLocationPermission() {
+        AlertDialog.Builder(requireContext()).apply {
+            setIcon(R.drawable.attention)
+            setTitle(getString(R.string.location_required_error))
+            setMessage(getString(R.string.permission_denied_explanation))
+            setPositiveButton("OK") { _, _ ->
+                locationPermissionResultRequest.launch(permissions)
+            }
+        }.show()
     }
 }
